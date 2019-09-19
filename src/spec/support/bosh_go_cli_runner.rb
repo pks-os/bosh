@@ -51,6 +51,7 @@ module Bosh::Spec
       @logger.info("Running ... `#{command}`")
       output    = nil
       env = options.fetch(:env, {})
+      env['BOSH_LOG_LEVEL'] = "DEBUG"
       exit_code = 0
 
       time = Benchmark.realtime do
