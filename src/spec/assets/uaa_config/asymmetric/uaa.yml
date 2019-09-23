@@ -1,36 +1,82 @@
-scim:
-  users:
-    - marissa|koala|marissa@test.org|Marissa|Bloggs|bosh.admin
-    - non-admin|password|marissa@test.org|Marissa|Bloggs|uaa.user
-  userids_enabled: true
-
+---
+name: uaa
+encryption:
+  active_key_label: uaa-encryption-key-1
+  encryption_keys:
+    - label: uaa-encryption-key-1
+      passphrase: aztv504vmgc7ymioclbu
+disableInternalAuth: false
+disableInternalUserManagement: false
+zones:
+  internal:
+    hostnames:
+      - localhost
+logging:
+  config: uaa_log.properties
+jwt:
+  token:
+    queryString:
+      enabled: true
+    revocable: true
+    policy:
+      accessTokenValiditySeconds: 43200
+      refreshTokenValiditySeconds: 2592000
+      global:
+        accessTokenValiditySeconds: 43200
+        refreshTokenValiditySeconds: 2592000
+      activeKeyId: uaa-jwt-key-1
+      keys:
+        uaa-jwt-key-1:
+          signingKey: |
+            -----BEGIN RSA PRIVATE KEY-----
+            MIIEogIBAAKCAQEAqr9RSxyB9TGUP7eQNOKUnkzWFDCcFW3E7GQqElja0/D5IVxD
+            KIWssv/s/tavpjc5lGjzc3aoQbT9tdfYeeu7UxdiZUSW4hmTPUq0kbB9jIOn7qv4
+            ywvqKJsOAI6+ncH/CzrFE8Nh9OWSTu/4FfnH/dKPfhCVDs90qCI7TQDGf7FIigNH
+            PUpmovVsKnzS05H3AZ6J/dlLG3/R0y0mfe/ag083Q0zAbWXVOUBcpNSVV19kNkY+
+            57kepYCC46WEW9KQUdYpbC2AsD/JxpIblVM5vzIft4vFt/rJ05pak5/RHHE6bSTr
+            NmOE+xPJun3eJU7xbqisjO8kWdLgeHhweRDtrQIDAQABAoIBAAc2LWjOu25vuaM3
+            TY/uQfitph0UMIN3L2oMkPpVZmitNNiD3RJJExI8XPYmeyS6EGSESkQGLvUXf9++
+            ThZYLoFD65P7YaQLEHz2OsoseiEFLoKWINvylOFCK0U6wjJHj04aHVjIV8rQJ23O
+            FNxYwGmoCwd4C9OkT3kKeRa3garC8GabUDy2+V0DiKBGt03KGLBmhO6RDTOidf70
+            D1bpHY5+ok4bedZrbUdz6qfmBNqHJTHuPgKW3X3EP0SowF1xN0GxRE6TKjOH7Y/t
+            idHnpXeYcLDxbVeZC+82ZSdb9m3K48zWzs5V0rqFRWMKAyK6aa7jf73xhCxrpqeh
+            g92X6sECgYEAwXpsN2fN7+5/okMohUibVELz/1apyIg+3YbckGkQVXL5IEytRTGG
+            iWvFJ74rHPJFADQVXAyp0MRU1dLho7lXnL/hLguO4m9EfCNPjp8g1WnUXXRrSMxI
+            XU92ZmPdtPsDE129lKSyxweY7T+8jiigL7OfH7pCQOIdvrgEEeZ8LDMCgYEA4ex4
+            1WFltHyEEJSF6ftL3Pb4eee99ZBTTPQUEtjmgWaD43kMP94o8UU7Ya5eTW5aC9zg
+            ++9TXbqJLPtOgtYgQD/ICLXBUiqWk/CpO6A8EYlaCGxdUSw3RsITRcgSONLhbV/P
+            UyJHlHxby274+Ptt+pTS7N/gfBMZeMEtwcyunp8CgYABdVjHeiLVQij4IiV2C7wQ
+            AIkyTYbuGgjPRqr287PJ0RoLokhUEzF+a6+KwyY0C6d1fu8CSJ4nErPJANPulgER
+            D2k1HaUwE8KiZOm+m3h141xUcAI3BEMvYN/1mZ8cNCArzzMUocEvOuFuOGLFd4zt
+            jx8N8Ct7rbinrV9qeyBIfQKBgCr4YC8tnDuM502EAkhznIVFkBMXqcC4F6/uSJch
+            HA6GohU048iOB7mEEnxMvvD5STUyaLRiW7fbD9Y3YkJuWan+t5w4fbGUGhm/T2Dg
+            5CvttOsfOUyEHWte5G2EVTrrmSbFb1h/j5/FW2xBCifJIqzje47EMh1HQLQAAiT3
+            Oks/AoGAeDygG44FWUoDWALtZP85t25FG6WM1oFPKg/q6kwpa/U415SG3Z6thoyF
+            9YsgWOcB1xE2h2MCI+9ObjLRAxIcfOIcDKZZ/5S9IkbZYR6vkcDi/gZQXkVoOgJx
+            Czb/4tCO9dopH7faIwx11G0ctuPcOAgOL8HnrHgz1lEl4RbmMo0=
+            -----END RSA PRIVATE KEY-----
+    refresh:
+      restrict_grant: false
+      unique: false
+      format: jwt
 oauth:
-  client:
-    override: true
-    autoapprove:
-      - bosh_cli
   clients:
-    test:
-      id: test
-      override: true
-      authorized-grant-types: client_credentials,refresh_token
-      scope: openid
-      authorities: bosh.admin,config_server.admin
-      secret: "secret"
-    bosh_cli:
-      id: bosh_cli
-      override: true
-      authorized-grant-types: implicit,password,refresh_token
-      scope: openid,bosh.admin
-      authorities: uaa.none
-      secret: ""
-    short-lived-client:
-      id: short-lived-client
-      override: true
-      authorized-grant-types: client_credentials
-      scope: openid
+    admin:
       authorities: bosh.admin
-      secret: "short-lived-secret"
+      authorized-grant-types: client_credentials
+      override: true
+      scope: ''
+      secret: w3kbjim4t2bxuge07ur6
+      id: admin
+    bosh_cli:
+      access-token-validity: 120
+      authorities: uaa.none
+      authorized-grant-types: password,refresh_token
+      override: true
+      refresh-token-validity: 86400
+      scope: openid,bosh.admin,bosh.read,bosh.*.admin,bosh.*.read,bosh.teams.*.admin,bosh.teams.*.read
+      secret: ''
+      id: bosh_cli
     team-client:
       id: team-client
       override: true
@@ -45,6 +91,45 @@ oauth:
       scope: openid
       authorities: bosh.teams.ateam.read
       secret: "team-secret"
+    credhub-admin:
+      access-token-validity: 3600
+      authorities: credhub.read,credhub.write
+      authorized-grant-types: client_credentials
+      override: true
+      scope: ''
+      secret: p3kzxyk8jp41ne2qcva6
+      id: credhub-admin
+    credhub_cli:
+      access-token-validity: 60
+      authorities: ''
+      authorized-grant-types: password,refresh_token
+      override: true
+      refresh-token-validity: 1800
+      scope: credhub.read,credhub.write
+      secret: ''
+      id: credhub_cli
+    director_to_credhub:
+      access-token-validity: 3600
+      authorities: credhub.read,credhub.write
+      authorized-grant-types: client_credentials
+      override: true
+      scope: ''
+      secret: s0fbkr7izuxiayojb47a
+      id: director_to_credhub
+    hm:
+      authorities: bosh.admin
+      authorized-grant-types: client_credentials
+      override: true
+      scope: ''
+      secret: 62zbayjv4i57sg9kieb7
+      id: hm
+    uaa_admin:
+      authorities: clients.read,clients.write,clients.secret,uaa.admin,scim.read,scim.write,password.write
+      authorized-grant-types: client_credentials
+      override: true
+      scope: ''
+      secret: 7bje8uaq309x2crfvbmm
+      id: uaa_admin
     upload-stemcells-access:
       id: upload-stemcells-access
       override: true
@@ -80,13 +165,6 @@ oauth:
       scope: openid
       authorities: bosh.deadbeef.admin
       secret: "secret"
-    hm:
-      id: hm
-      override: true
-      authorized-grant-types: client_credentials
-      scope: openid
-      authorities: uaa.none,bosh.admin
-      secret: "secret"
     production_team:
       id: production_team
       override: true
@@ -108,38 +186,36 @@ oauth:
       scope: openid
       authorities: bosh.admin
       secret: "auditsecret"
-    hm:
-      id: hm
-      override: true
-      authorized-grant-types: client_credentials,refresh_token
-      scope: openid
-      authorities: uaa.none,bosh.admin
-      secret: "secret"
-jwt:
-  token:
-    signing-key: |
-      -----BEGIN RSA PRIVATE KEY-----
-      MIICXQIBAAKBgQC/85WUjM7WKxnSMkd/TtGo+WWXkI5pH8ACBtb5oameiMJIw/wZ
-      +dtyIwU+NZ0mKua+IzpGL1++bLJL0fDxE1LpD88jWzjaaTp8930UyY23oMxSa6JM
-      G6OpDW469VTkY1g3uE/RAFtg7J9ZnDrTrMFJrduVVRs5sM3o4r1UYUTD6wIDAQAB
-      AoGAP0IpQ4F8ELy3j7weL+hr1AIM5vwu0poyDvjuE+qhGav8Szq7dFwRY/YCnlPQ
-      7GkrDfJSHBs0tG7h+3a+rtQteCrWLljyYaA9VTpelmvuB/zgNMUhhV2KqhtRYeZl
-      QM7LVC/furMFfV43UQIVeKsJKJyXzm8ny3x9RwT6dTn5eGECQQDtiDfnw6dEYvlz
-      3NwRcYx5Zdf+rLd934j5yCjC1TEWFja8Vo3ObBC5aPYtioaSPIeryhTr6TALKkk7
-      eD+tWrCpAkEAzuAj//pNNonuPdyRQSwTgiTpcr12eTYVbtny6HmwRFGvfirfRAs7
-      9W1AyA3iFtKQlY+/Pm1jv/GTEAI6UaUocwJBAN5G6onnfU9xjx3tP8LTDzFLLKUV
-      21/fHr8fn4UzG4wfnXkBRhI07jGTF0vmpaeTHSKVKJ7ayCqql30fOfdvNoECQQC7
-      VGok9LIQjewHZoC95DyyH9ypQvlSH3BfFcsJSpAb/WANvqK4Cfg8cLc1sKSnh/rX
-      A/jofcPS3t0NpQbMQeMTAkAYjCzyBaAc/zjLy1xpQrOGt/WRv1QYxvTFUwJhiPUW
-      KE4imo4yPyd/GY7rzwDtokv+pDTdaVbC8zUfC7iiJoiX
-      -----END RSA PRIVATE KEY-----
-
-    verification-key: |
-      -----BEGIN PUBLIC KEY-----
-      MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQC/85WUjM7WKxnSMkd/TtGo+WWX
-      kI5pH8ACBtb5oameiMJIw/wZ+dtyIwU+NZ0mKua+IzpGL1++bLJL0fDxE1LpD88j
-      WzjaaTp8930UyY23oMxSa6JMG6OpDW469VTkY1g3uE/RAFtg7J9ZnDrTrMFJrduV
-      VRs5sM3o4r1UYUTD6wIDAQAB
-      -----END PUBLIC KEY-----
-
+  user:
+    authorities:
+      - openid
+      - scim.me
+      - cloud_controller.read
+      - cloud_controller.write
+      - cloud_controller_service_permissions.read
+      - password.write
+      - uaa.user
+      - approvals.me
+      - oauth.approvals
+      - notification_preferences.read
+      - notification_preferences.write
+      - profile
+      - roles
+      - user_attributes
+      - uaa.offline_token
+  authorize:
+    ssl: true
+scim:
+  userids_enabled: true
+  user:
+    override: true
+  users:
+    - marissa|koala|marissa@test.org|Marissa|Bloggs|bosh.admin
+    - non-admin|password|marissa@test.org|Marissa|Bloggs|uaa.user
+  groups:
+    bosh.admin: User has admin access on any Director
+    bosh.read: User has read access on any Director
+    bosh.releases.upload: User can upload new releases
+    bosh.stemcells.upload: User can upload new stemcells
 require_https: false
+assetBaseUrl: "/resources/oss"

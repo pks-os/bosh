@@ -4,15 +4,17 @@ module Bosh::Dev::Sandbox
   class UaaService
     attr_reader :port
 
-    TOMCAT_VERSIONED_FILENAME = 'apache-tomcat-8.0.21'.freeze
-    UAA_FILENAME = 'uaa.war'.freeze
-
-    UAA_VERSION = 'cloudfoundry-identity-uaa-3.5.0'.freeze
+    UAA_RELEASE = 'uaa-release'.freeze
+    UAA_REPO = "cloudfoundry/#{UAA_RELEASE}".freeze
 
     REPO_ROOT = File.expand_path('../../../../../../', File.dirname(__FILE__))
-    INSTALL_DIR = File.join('tmp', 'integration-uaa', UAA_VERSION)
-    TOMCAT_DIR = File.join(INSTALL_DIR, TOMCAT_VERSIONED_FILENAME)
+    INSTALL_DIR = File.join('tmp', 'integration-uaa', 'uaa')
 
+    RELEASE_PATH = File.join(INSTALL_DIR, UAA_RELEASE)
+    TOMCAT_TAR_PATH = File.join(INSTALL_DIR, 'tomcat.tar')
+    TOMCAT_DIR = File.join(INSTALL_DIR, 'tomcat')
+
+    UAA_FILENAME = 'uaa.war'.freeze
     WAR_FILE_PATH = File.join(REPO_ROOT, TOMCAT_DIR, 'webapps', UAA_FILENAME)
     # Keys and Certs
     ASSETS_DIR = File.expand_path('bosh-dev/assets/sandbox/ca', REPO_ROOT)
@@ -43,17 +45,16 @@ module Bosh::Dev::Sandbox
     end
 
     def self.install
-      FileUtils.mkdir_p(TOMCAT_DIR)
+      FileUtils.mkdir_p(RELEASE_PATH)
 
       retryable.retryer do
-        `#{File.dirname(__FILE__)}/install_tomcat.sh #{INSTALL_DIR} #{TOMCAT_VERSIONED_FILENAME} 957e88df8a9c3fc6b786321c4014b44c5c775773`
+        `#{File.dirname(__FILE__)}/download_bosh_release.sh #{UAA_REPO} #{RELEASE_PATH}/uaa-release.tgz`
         $? == 0
       end
 
-      retryable.retryer do
-        `#{File.dirname(__FILE__)}/install_binary.sh #{UAA_VERSION}.war #{WAR_FILE_PATH} 6167d1b5afe3e12c26482fcb45c0056475cb3e1b9ca2996707d9ac9c22f60dc9 bosh-dependencies`
-        $? == 0
-      end
+      `#{File.dirname(__FILE__)}/untar.sh #{RELEASE_PATH} uaa-release uaa apache-tomcat-*.tar.gz #{TOMCAT_TAR_PATH}`
+      `tar xf #{TOMCAT_TAR_PATH} -C #{INSTALL_DIR} && mv #{INSTALL_DIR}/apache-tomcat-* #{TOMCAT_DIR}`
+      `#{File.dirname(__FILE__)}/untar.sh #{RELEASE_PATH} uaa-release uaa cloudfoundry-identity-uaa.war #{WAR_FILE_PATH}`
     end
 
     def self.retryable
@@ -64,7 +65,7 @@ module Bosh::Dev::Sandbox
       @uaa_process.start
 
       begin
-        @connector.try_to_connect(6000)
+        @connector.try_to_connect
       rescue StandardError
         output_service_log(@uaa_process.description, @uaa_process.stdout_contents, @uaa_process.stderr_contents)
         raise
