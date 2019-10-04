@@ -287,17 +287,25 @@ module Bosh::Director
                 build: Models::CompiledPackage.generate_build_number(package, stemcell_os, stemcell_version),
               )
 
+
               create_or_update_blob(
                 logger,
                 compiled_package.sha1,
                 compiled_package,
-                File.join(release_dir, 'compiled_packages', "#{package.name}.tgz"),
+                compiled_package_path(release_dir, stemcell_os, stemcell_version, package),
                 'compiled package',
                 similar_package&.blobstore_id,
               )
 
               compiled_package.save
             end
+          end
+
+          def compiled_package_path(release_dir, stemcell_os, stemcell_version, package)
+            nested_path = File.join(release_dir, 'compiled_packages', stemcell_os, stemcell_version, "#{package.name}.tgz")
+            return nested_path if File.exist?(nested_path)
+
+            File.join(release_dir, 'compiled_packages', "#{package.name}.tgz")
           end
 
           def fix_similar_packages(logger, package, fix, stemcell, dependency_key, compiled_package_sha1, compiled_pkg_tgz)

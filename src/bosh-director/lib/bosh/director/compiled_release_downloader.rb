@@ -23,7 +23,10 @@ module Bosh::Director
         desc = "#{compiled_package.package.name}/#{compiled_package.package.version}"
         event_log_stage.advance_and_track(desc) do
           blobstore_id = compiled_package.blobstore_id
-          File.open(File.join(path, "#{compiled_package.package.name}.tgz"), 'w') do |f|
+
+          FileUtils.mkpath(File.join(path, compiled_package.stemcell_os, compiled_package.stemcell_version))
+
+          File.open(File.join(path, compiled_package.stemcell_os, compiled_package.stemcell_version, "#{compiled_package.package.name}.tgz"), 'w') do |f|
             @blobstore_client.get(blobstore_id, f, sha1: compiled_package.sha1)
           end
         end
@@ -53,6 +56,5 @@ module Bosh::Director
     def event_log
       @event_log ||= Config.event_log
     end
-
   end
 end
