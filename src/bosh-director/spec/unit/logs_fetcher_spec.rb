@@ -69,6 +69,38 @@ module Bosh::Director
           end
         end
 
+        context 'when signed urls are enabled' do
+          let(:blobstore) { instance_double(Bosh::Blobstore::BaseClient) }
+          let(:signed_url) { 'https://signed-url.com' }
+          let(:blobstore_id) { 'blobstore_id'}
+          let(:blobstore_config) do
+            {
+              enable_signed_urls: true
+            }
+          end
+
+          before do
+            allow(App).to receive_message_chain(:instance, :blobstores, :blobstore).and_return(blobstore)
+            allow(blobstore).to receive(:signing_enabled?).and_return(true)
+            allow(blobstore).to receive(:sign).with(blobstore_id, 'put').and_return(signed_url)
+            allow(SecureRandom).to receive(:uuid).and_return(blobstore_id)
+          end
+
+          context 'when the agent api is >= 3' do
+            # todo: mock out agent api number
+
+            it 'generates a blobstore id, signs the url and fetches logs with the signed url' do
+              expect(mock_agent).to receive(:fetch_logs_with_signed_url).with({signed_url: signed_url, log_type: 'some-log-type', filters: []})
+                                      .and_return('sha1' => 'sha1-digest')
+              blob, sha = subject.fetch(mock_instance_model, 'some-log-type', filters)
+              expect(blob).to eq blobstore_id
+              expect(sha).to eq 'sha1-digest'
+            end
+
+          end
+        end
+
+
         context 'when the agent does not find the logs' do
           it 'raises an error' do
             expect(mock_agent).to receive(:fetch_logs).and_return(
