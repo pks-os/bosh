@@ -68,6 +68,7 @@ module Bosh::Director
         :nats_client_private_key_path,
         :record_events,
         :runtime,
+        :metrics_enabled,
       )
 
       def clear
@@ -237,6 +238,10 @@ module Bosh::Director
         cpi_config = config.fetch('cpi')
         max_cpi_api_version = cpi_config.fetch('max_supported_api_version')
         @preferred_cpi_api_version = [max_cpi_api_version, cpi_config.fetch('preferred_api_version')].min
+
+        @metrics = config.fetch('metrics', {})
+        @metrics_enabled = @metrics.fetch('enabled', false)
+        MetricsCollector.instance.enable if @metrics_enabled
       end
 
       def agent_env
@@ -568,6 +573,11 @@ module Bosh::Director
 
     def record_events
       hash.fetch('record_events', false)
+    end
+
+    def metrics_enabled?
+      metrics = @hash.fetch('metrics', {})
+      !!metrics['enabled']
     end
 
     private

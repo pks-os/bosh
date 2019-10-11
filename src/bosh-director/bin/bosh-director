@@ -3,6 +3,8 @@
 require 'bosh/director'
 require 'puma'
 require 'puma/configuration'
+require 'prometheus/middleware/collector'
+require 'prometheus/middleware/exporter'
 
 config_file = nil
 
@@ -23,6 +25,11 @@ route_configuration = Bosh::Director::Api::RouteConfiguration.new(config)
 
 rack_app = Puma::Rack::Builder.app do
   use Rack::CommonLogger
+
+  if config.metrics_enabled?
+    use Prometheus::Middleware::Collector
+    use Prometheus::Middleware::Exporter
+  end
 
   route_configuration.controllers.each do |route, controller|
     map(route) { run controller }

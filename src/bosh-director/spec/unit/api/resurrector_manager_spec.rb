@@ -43,6 +43,15 @@ module Bosh::Director
             expect(Models::DirectorAttribute.first(name: 'resurrection_paused').value).to eq('false')
           end
         end
+
+        it 'updates the prometheus metric' do
+          MetricsCollector.instance.enable
+          expect(MetricsCollector.instance.get(:resurrection_enabled)).to eq(1)
+          resurrection_manager.set_pause_for_all('true')
+          expect(MetricsCollector.instance.get(:resurrection_enabled)).to eq(0)
+          resurrection_manager.set_pause_for_all('false')
+          expect(MetricsCollector.instance.get(:resurrection_enabled)).to eq(1)
+        end
       end
 
       describe 'pause_for_all?' do
