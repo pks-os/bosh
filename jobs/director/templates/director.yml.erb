@@ -183,6 +183,7 @@ end
 
 if p('blobstore.provider') == 's3'
   blobstore_options = {
+    'enable_signed_urls' => p('blobstore.enable_signed_urls'),
     'bucket_name' => p('blobstore.bucket_name'),
     'credentials_source' => p('blobstore.credentials_source', 'static'),
     'access_key_id' => p('blobstore.access_key_id', nil),
@@ -219,6 +220,7 @@ if p('blobstore.provider') == 's3'
   end
 elsif p('blobstore.provider') == 'gcs'
     blobstore_options = {
+    'enable_signed_urls' => p('blobstore.enable_signed_urls'),
     'bucket_name' => p('blobstore.bucket_name'),
     'credentials_source' => p('blobstore.credentials_source', 'static'),
     'json_key' => p('blobstore.json_key', nil),
@@ -233,6 +235,7 @@ elsif p('blobstore.provider') == 'gcs'
   end
 else
   blobstore_options = {
+    'enable_signed_urls' => p('blobstore.enable_signed_urls'),
     'endpoint' => "https://#{p('blobstore.address')}:#{p('blobstore.port')}",
     'user' => p('blobstore.director.user'),
     'password' => p('blobstore.director.password'),

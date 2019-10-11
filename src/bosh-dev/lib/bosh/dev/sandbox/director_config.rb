@@ -21,6 +21,7 @@ module Bosh::Dev::Sandbox
                 :dns_enabled,
                 :enable_cpi_resize_disk,
                 :enable_nats_delivered_templates,
+                :enable_signed_urls,
                 :enable_post_deploy,
                 :external_cpi_config,
                 :generate_vm_passwords,
@@ -85,6 +86,7 @@ module Bosh::Dev::Sandbox
       @enable_cpi_resize_disk = attrs.fetch(:enable_cpi_resize_disk, false)
       @default_update_vm_strategy = attrs.fetch(:default_update_vm_strategy, nil)
       @enable_nats_delivered_templates = attrs.fetch(:enable_nats_delivered_templates, false)
+      @enable_signed_urls = attrs.fetch(:enable_signed_urls, false)
       @generate_vm_passwords = attrs.fetch(:generate_vm_passwords, false)
       @remove_dev_tools = attrs.fetch(:remove_dev_tools, false)
       @director_ips = attrs.fetch(:director_ips, [])

@@ -5,11 +5,16 @@ module Bosh
   module Blobstore
     class BaseClient < Client
       attr_reader :logger
+      attr_reader :options
 
       # @param [Hash] options blobstore specific options
       def initialize(options)
         @options = Bosh::Common.symbolize_keys(options)
+        puts "BLOBSTORE INIT START"
+        puts @options.inspect
+        puts "BLOBSTORE INIT END"
         @logger = Bosh::Director::TaggedLogger.new(Bosh::Director::Config.logger, 'blobstore')
+        @@signed_urls_enabled = @options.fetch(:enable_signed_urls, false)
       end
 
       # Saves a file or a string to the blobstore.
@@ -112,6 +117,10 @@ module Bosh
       end
 
       def signing_enabled?
+        puts "BLOBSTORE SIGN START"
+        puts @options.inspect
+        puts "BLOBSTORE SIGN END"
+        puts "thing #{@@signed_urls_enabled}"
         @options[:enable_signed_urls]
       end
 

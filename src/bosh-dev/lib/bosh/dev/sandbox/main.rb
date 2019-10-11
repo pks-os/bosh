@@ -211,6 +211,7 @@ module Bosh::Dev::Sandbox
         dns_enabled: @dns_enabled,
         enable_cpi_resize_disk: @enable_cpi_resize_disk,
         enable_nats_delivered_templates: @enable_nats_delivered_templates,
+        enable_signed_urls: @enable_signed_urls,
         enable_post_deploy: @enable_post_deploy,
         external_cpi_config: external_cpi_config,
         generate_vm_passwords: @generate_vm_passwords,
@@ -330,13 +331,15 @@ module Bosh::Dev::Sandbox
       @with_config_server_trusted_certs = options.fetch(:with_config_server_trusted_certs, true)
       @director_fix_stateful_nodes = options.fetch(:director_fix_stateful_nodes, false)
       @dns_enabled = options.fetch(:dns_enabled, true)
-      @local_dns = options.fetch(:local_dns, {enabled: false, include_index: false, use_dns_addresses: false})
+      @local_dns = options.fetch(:local_dns, enabled: false, include_index: false, use_dns_addresses: false)
       @networks = options.fetch(:networks, enable_cpi_management: false)
       @nginx_service.reconfigure(options[:ssl_mode])
       @users_in_manifest = options.fetch(:users_in_manifest, true)
       @enable_post_deploy = options.fetch(:enable_post_deploy, true)
       @enable_nats_delivered_templates = options.fetch(:enable_nats_delivered_templates, false)
       @enable_cpi_resize_disk = options.fetch(:enable_cpi_resize_disk, false)
+      @enable_signed_urls = options.fetch(:enable_signed_urls, false)
+      @blobstore_secret = options.fetch(:blobstore_secret, '')
       @default_update_vm_strategy = options.fetch(:default_update_vm_strategy, ENV['DEFAULT_UPDATE_VM_STRATEGY'])
       @generate_vm_passwords = options.fetch(:generate_vm_passwords, false)
       @remove_dev_tools = options.fetch(:remove_dev_tools, false)

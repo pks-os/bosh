@@ -6,6 +6,9 @@ module Bosh::Blobstore
   class DavcliBlobstoreClient < BaseClient
     def initialize(options)
       super(options)
+      puts "DAV BLOBSTORE INIT START"
+      puts @options.inspect
+      puts "BLOBSTORE INIT END"
       @davcli_path = @options.fetch(:davcli_path)
       unless Kernel.system("#{@davcli_path}", "-v", out: "/dev/null", err: "/dev/null")
         raise BlobstoreError, "Cannot find davcli executable. Please specify davcli_path parameter"
@@ -20,6 +23,10 @@ module Bosh::Blobstore
       }
       @davcli_config_path = @options.fetch(:davcli_config_path, nil)
       @config_file_path = write_config_file(@davcli_config_path)
+
+      puts "DAV END BLOBSTORE INIT START"
+      puts @options.inspect
+      puts "BLOBSTORE INIT END"
     end
 
     protected
