@@ -1,0 +1,37 @@
+#!/usr/bin/env ruby
+
+require 'bosh/director'
+require 'prometheus/middleware/collector'
+require 'prometheus/middleware/exporter'
+require 'puma'
+require 'puma/configuration'
+
+config_file = ::File.expand_path('../../config/bosh-director.yml', __FILE__)
+
+opts = OptionParser.new do |op|
+  op.on('-c', '--config [ARG]', 'Configuration File') do |opt|
+    config_file = opt
+  end
+end
+
+opts.parse!(ARGV.dup)
+
+config = Bosh::Director::Config.load_file(config_file)
+
+rack_app = Puma::Rack::Builder.app do
+  use Rack::CommonLogger
+  use Prometheus::Middleware::Collector
+  use Prometheus::Middleware::Exporter
+
+  run ->(_) { [200, {'Content-Type' => 'text/html'}, ['OK']] }
+end
+
+puma_configuration = Puma::Configuration.new do |user_config|
+  user_config.workers config.puma_workers
+  user_config.bind "tcp://127.0.0.1:9091" # TODO: Config for metrics port
+  user_config.app rack_app
+  user_config.preload_app!
+end
+
+puma_launcher = Puma::Launcher.new(puma_configuration)
+puma_launcher.run

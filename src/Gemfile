@@ -73,3 +73,5 @@ group :development, :test do
   # for registry
   gem 'mono_logger'
 end
+
+gem "prometheus-client", "~> 0.10.0"

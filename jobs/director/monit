@@ -19,6 +19,14 @@ check process director_scheduler
   stop program "/var/vcap/jobs/bpm/bin/bpm stop director -p scheduler"
   group vcap
 
+<% if p('director.metrics_server.enabled') %>
+check process metrics_server
+  with pidfile /var/vcap/sys/run/bpm/director/metrics_server.pid
+  start program "/var/vcap/jobs/bpm/bin/bpm start director -p metrics_server"
+  stop program "/var/vcap/jobs/bpm/bin/bpm stop director -p metrics_server"
+  group vcap
+<% end %>
+
 <% if_p('director.local_dns.enabled') do |enabled| %>
   <% if enabled %>
 check process director_sync_dns
