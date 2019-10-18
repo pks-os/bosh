@@ -1,6 +1,8 @@
 #!/usr/bin/env ruby
 
-require 'bosh/director'
+require 'bosh/director/config'
+require 'bosh/director/metrics_collector'
+require 'optparse'
 require 'prometheus/middleware/collector'
 require 'prometheus/middleware/exporter'
 require 'puma'
@@ -17,13 +19,17 @@ end
 opts.parse!(ARGV.dup)
 
 config = Bosh::Director::Config.load_file(config_file)
+config.db
+
+metrics_collector = Bosh::Director::MetricsCollector.new(config)
+metrics_collector.start
 
 rack_app = Puma::Rack::Builder.app do
   use Rack::CommonLogger
   use Prometheus::Middleware::Collector
   use Prometheus::Middleware::Exporter
 
-  run ->(_) { [200, {'Content-Type' => 'text/html'}, ['OK']] }
+  run ->(_) { [200, { 'Content-Type' => 'text/html' }, ['OK']] }
 end
 
 puma_configuration = Puma::Configuration.new do |user_config|
