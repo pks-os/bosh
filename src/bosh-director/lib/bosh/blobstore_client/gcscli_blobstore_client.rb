@@ -1,11 +1,14 @@
 require 'securerandom'
 require 'open3'
 require 'json'
+require 'base64'
 
 module Bosh::Blobstore
   class GcscliBlobstoreClient < BaseClient
     EXIT_CODE_OBJECT_FOUND = 0
     EXIT_CODE_OBJECT_NOTFOUND = 3
+
+    attr_reader :signed_url_headers
 
     # Blobstore client for GCS, using bosh-gcscli binary
     # @param [Hash] options GCSconnection options
@@ -38,6 +41,19 @@ module Bosh::Blobstore
       @gcscli_options.reject! { |_k, v| v.nil? }
 
       @config_file = write_config_file(@options.fetch(:gcscli_config_path, nil))
+
+      @signed_url_headers = {}
+      return if @gcscli_options[:encryption_key].nil?
+
+      key_bytes = Base64.decode64(@gcscli_options[:encryption_key])
+      key_hash = Digest::SHA256.digest(key_bytes)
+      base64_key_hash = Base64.encode64(key_hash)
+
+      @signed_url_headers = {
+        'x-goog-encryption-algorithm': 'AES256',
+        'x-goog-encryption-key': @gcscli_options[:encryption_key],
+        'x-goog-encryption-key-sha256': base64_key_hash,
+      }
     end
 
     def redacted_credential_properties_list

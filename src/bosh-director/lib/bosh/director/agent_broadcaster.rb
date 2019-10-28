@@ -130,6 +130,7 @@ module Bosh::Director
           'signed_url' => signed_url,
           'multi_digest' => digest,
           'version' => version,
+          'headers' => blobstore_client.signed_url_headers,
         }
         agent_client(agent_id, instance.name).sync_dns_with_signed_url(request, &blk)
       else

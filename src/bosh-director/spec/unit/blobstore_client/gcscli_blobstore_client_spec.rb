@@ -1,5 +1,6 @@
 require 'spec_helper'
 require 'json'
+require 'base64'
 
 module Bosh::Blobstore
   describe GcscliBlobstoreClient do
@@ -13,9 +14,9 @@ module Bosh::Blobstore
 
     let(:options) do
       {
-          bucket_name:       'test',
-          storage_class:      'REGIONAL',
-          gcscli_path:        '/var/vcap/packages/bosh-gcscli/bin/bosh-gcscli'
+        bucket_name: 'test',
+        storage_class: 'REGIONAL',
+        gcscli_path: '/var/vcap/packages/bosh-gcscli/bin/bosh-gcscli',
       }
     end
 
@@ -194,6 +195,37 @@ module Bosh::Blobstore
 
       it 'provides properties to remove for agent settings' do
         expect(subject.redacted_credential_properties_list).to eq(%w[json_key credentials_source])
+      end
+    end
+
+    describe '#signed_url_headers' do
+      context 'encryption key provided' do
+        let(:options) do
+          {
+            bucket_name: 'test',
+            storage_class: 'REGIONAL',
+            gcscli_path: '/var/vcap/packages/bosh-gcscli/bin/bosh-gcscli',
+            encryption_key: 'base64key',
+          }
+        end
+
+        it 'should return key and hash headers' do
+          allow(Base64).to receive(:decode64).with('base64key').and_return('plainkey')
+          allow(Digest::SHA256).to receive(:digest).with('plainkey').and_return('plainhash')
+          allow(Base64).to receive(:encode64).with('plainhash').and_return('base64hash')
+
+          expect(subject.signed_url_headers).to eq(
+            'x-goog-encryption-algorithm': 'AES256',
+            'x-goog-encryption-key': 'base64key',
+            'x-goog-encryption-key-sha256': 'base64hash',
+          )
+        end
+      end
+
+      context 'encryption key not provided' do
+        it 'should return no headers' do
+          expect(subject.signed_url_headers).to eq({})
+        end
       end
     end
   end

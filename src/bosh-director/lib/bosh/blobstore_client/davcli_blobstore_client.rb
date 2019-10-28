@@ -26,6 +26,10 @@ module Bosh::Blobstore
       %w[user password secret]
     end
 
+    def signed_url_headers
+      {}
+    end
+
     protected
 
     def get_file(id, file)

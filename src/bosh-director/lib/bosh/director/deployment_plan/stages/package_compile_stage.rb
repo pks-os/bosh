@@ -103,10 +103,12 @@ module Bosh::Director
                   compiled_package_blobstore_id = @blobstore.generate_object_id
                   package_get_signed_url = @blobstore.sign(package.blobstore_id)
                   upload_signed_url = @blobstore.sign(compiled_package_blobstore_id, 'put')
+                  headers = @blobstore.signed_url_headers
 
                   request = {
                     'package_get_signed_url' => package_get_signed_url,
                     'upload_signed_url' => upload_signed_url,
+                    'headers' => headers,
                     'digest' => package.sha1,
                     'name' => package.name,
                     'version' => version,

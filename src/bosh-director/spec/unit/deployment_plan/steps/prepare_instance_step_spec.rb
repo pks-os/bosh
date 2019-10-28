@@ -26,14 +26,26 @@ module Bosh::Director
         let(:signed_apply_spec) do
           {
             'test' => 'apply-me',
-            'packages' => { 'pkg' => { 'blobstore_id' => 'blob1', 'signed_url' => 'http://sig1' } },
+            'packages' => {
+              'pkg' => {
+                'blobstore_id' => 'blob1',
+                'signed_url' => 'http://sig1',
+                'headers' => { 'key': 'value' },
+              },
+            },
             'rendered_templates_archive' => { 'blobstore_id' => 'blob2' },
           }
         end
         let(:signed_jobless_apply_spec) do
           {
             'test' => 'unemployed',
-            'packages' => { 'pkg' => { 'blobstore_id' => 'blob3', 'signed_url' => 'http://sig3' } },
+            'packages' => {
+              'pkg' => {
+                'blobstore_id' => 'blob3',
+                'signed_url' => 'http://sig3',
+                'headers' => { 'key': 'value' },
+              },
+            },
             'rendered_templates_archive' => { 'blobstore_id' => 'blob4' },
           }
         end
@@ -163,6 +175,7 @@ module Bosh::Director
               allow(blobstore).to receive(:sign).with('blob1', 'get').and_return('http://sig1')
               allow(blobstore).to receive(:sign).with('blob2', 'get').and_return('http://sig2')
               allow(blobstore).to receive(:sign).with('blob3', 'get').and_return('http://sig3')
+              allow(blobstore).to receive(:signed_url_headers).and_return('key': 'value')
             end
 
             context 'with an instance plan referring to an instance with both new and old vms' do

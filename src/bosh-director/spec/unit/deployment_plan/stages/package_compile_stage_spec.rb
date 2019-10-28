@@ -275,6 +275,7 @@ module Bosh::Director
       expect(request['package_get_signed_url']).to eq("#{package.blobstore_id}-url")
       expect(request['upload_signed_url']).to eq('putcompiled_id-url')
       expect(request['digest']).to eq(package.sha1)
+      expect(request['headers']).to eq('key': 'value')
 
       {
         'result' => {
@@ -386,6 +387,7 @@ module Bosh::Director
         allow(blobstore).to receive(:sign) do |oid, verb|
           "#{verb}#{oid}-url"
         end
+        allow(blobstore).to receive(:signed_url_headers).and_return('key': 'value')
       end
 
       it 'compiles all packages' do

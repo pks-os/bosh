@@ -165,6 +165,7 @@ module Bosh::Director
         if blobstore.can_sign_urls?(@stemcell.api_version) && !!apply_spec['packages']
           apply_spec['packages'].each do |_, package|
             package['signed_url'] = blobstore.sign(package['blobstore_id'], 'get')
+            package['headers'] = blobstore.signed_url_headers
           end
         end
 

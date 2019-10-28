@@ -37,6 +37,7 @@ module Bosh::Director
         def add_signed_urls(spec)
           spec['packages'].each do |_, package|
             package['signed_url'] = @blobstore.sign(package['blobstore_id'], 'get')
+            package['headers'] = @blobstore.signed_url_headers
           end
           spec
         end

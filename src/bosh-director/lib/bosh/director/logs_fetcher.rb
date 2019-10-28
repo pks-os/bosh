@@ -27,7 +27,10 @@ module Bosh::Director
         if @blobstore.can_sign_urls?(instance.active_vm.stemcell_api_version)
           blobstore_id = @blobstore.generate_object_id
           signed_url = @blobstore.sign(blobstore_id, 'put')
-          fetch_logs_result = agent.fetch_logs_with_signed_url(signed_url: signed_url, log_type: log_type, filters: filters)
+          headers = @blobstore.signed_url_headers
+          fetch_logs_result = agent.fetch_logs_with_signed_url(
+            signed_url: signed_url, log_type: log_type, filters: filters, headers: headers,
+          )
         else
           fetch_logs_result = agent.fetch_logs(log_type, filters)
           blobstore_id = fetch_logs_result['blobstore_id']

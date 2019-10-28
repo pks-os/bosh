@@ -297,9 +297,13 @@ module Bosh::Director
 
         it 'signs the existing blobstore id' do
           expect(blobstore).to receive(:sign).with('fake-blob-id').and_return('signed')
+          expect(blobstore).to receive(:signed_url_headers).and_return('key': 'value')
           expect(AgentClient).to receive(:with_agent_id).with(instance1.agent_id, instance1.name) do
             expect(agent).to receive(:sync_dns_with_signed_url).with(
               'signed_url' => 'signed',
+              'headers' => {
+                'key': 'value',
+              },
               'multi_digest' => 'fake-sha1',
               'version' => anything,
             ) do |&blk|

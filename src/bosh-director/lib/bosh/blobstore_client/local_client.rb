@@ -9,6 +9,10 @@ module Bosh::Blobstore
       FileUtils.mkdir_p(@blobstore_path) unless File.directory?(@blobstore_path)
     end
 
+    def signed_url_headers
+      {}
+    end
+
     protected
 
     def create_file(id, file)

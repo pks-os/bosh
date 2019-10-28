@@ -161,15 +161,26 @@ module Bosh::Director::DeploymentPlan
         end
 
         context 'when signed urls are enabled' do
-          let(:apply_packages) { { 'pkg' => { 'version' => '0', 'blobstore_id' => 'bsid', 'signed_url' => 'fake-signed-url' } } }
+          let(:apply_packages) do
+            {
+              'pkg' => {
+                'version' => '0',
+                'blobstore_id' => 'bsid',
+                'signed_url' => 'fake-signed-url',
+                'headers' => { 'key': 'value' },
+              },
+            }
+          end
 
           before do
             allow(blobstore).to receive(:can_sign_urls?).and_return(true)
             allow(blobstore).to receive(:sign).and_return('fake-signed-url')
+            allow(blobstore).to receive(:signed_url_headers).and_return('key': 'value')
           end
 
           it 'generates signed urls for packages' do
             expect(blobstore).to receive(:sign)
+            expect(blobstore).to receive(:signed_url_headers)
             expect(agent_client).to receive(:apply).with(apply_spec).ordered
             instance.apply_vm_state(instance_spec)
           end

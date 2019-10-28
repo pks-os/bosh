@@ -142,6 +142,10 @@ module Bosh
         not_supported
       end
 
+      def signed_url_headers
+        not_supported
+      end
+
       protected
 
       # @return [String] the id
