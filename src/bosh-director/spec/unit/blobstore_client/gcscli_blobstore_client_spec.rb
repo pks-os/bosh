@@ -205,19 +205,15 @@ module Bosh::Blobstore
             bucket_name: 'test',
             storage_class: 'REGIONAL',
             gcscli_path: '/var/vcap/packages/bosh-gcscli/bin/bosh-gcscli',
-            encryption_key: 'base64key',
+            encryption_key: 'bDEcLP4Q7Rd2MwIabLQPMT63tMrcy/bU8ZGTKVZUTJE=',
           }
         end
 
         it 'should return key and hash headers' do
-          allow(Base64).to receive(:decode64).with('base64key').and_return('plainkey')
-          allow(Digest::SHA256).to receive(:digest).with('plainkey').and_return('plainhash')
-          allow(Base64).to receive(:encode64).with('plainhash').and_return('base64hash')
-
           expect(subject.signed_url_headers).to eq(
             'x-goog-encryption-algorithm': 'AES256',
-            'x-goog-encryption-key': 'base64key',
-            'x-goog-encryption-key-sha256': 'base64hash',
+            'x-goog-encryption-key': 'bDEcLP4Q7Rd2MwIabLQPMT63tMrcy/bU8ZGTKVZUTJE=',
+            'x-goog-encryption-key-sha256': 'W+WznRnGZBTueXXwFGhhvsndJGmmI6bavH5YD9fCbTA=',
           )
         end
       end

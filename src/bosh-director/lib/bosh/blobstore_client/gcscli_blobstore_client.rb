@@ -45,9 +45,9 @@ module Bosh::Blobstore
       @signed_url_headers = {}
       return if @gcscli_options[:encryption_key].nil?
 
-      key_bytes = Base64.decode64(@gcscli_options[:encryption_key])
+      key_bytes = Base64.strict_decode64(@gcscli_options[:encryption_key])
       key_hash = Digest::SHA256.digest(key_bytes)
-      base64_key_hash = Base64.encode64(key_hash)
+      base64_key_hash = Base64.strict_encode64(key_hash)
 
       @signed_url_headers = {
         'x-goog-encryption-algorithm': 'AES256',
