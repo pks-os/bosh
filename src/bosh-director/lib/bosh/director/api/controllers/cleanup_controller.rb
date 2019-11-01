@@ -10,6 +10,15 @@ module Bosh::Director
 
         redirect "/tasks/#{task.id}"
       end
+
+      post '/dryrun', :consumes => :json do
+        job_queue = JobQueue.new
+        payload = json_decode(request.body.read)
+        payload['config']['dryrun'] = true
+        task = Bosh::Director::Jobs::CleanupArtifacts.enqueue(current_user, payload['config'], job_queue)
+
+        redirect "/tasks/#{task.id}"
+      end
     end
   end
 end
