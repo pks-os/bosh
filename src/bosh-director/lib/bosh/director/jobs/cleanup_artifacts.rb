@@ -19,69 +19,53 @@ module Bosh::Director
       end
 
       def perform
-        orphaned_vm_deleter = OrphanedVMDeleter.new(logger)
-        orphan_disk_manager = OrphanDiskManager.new(Config.logger)
-        release_manager = Api::ReleaseManager.new
-        stemcell_manager = Api::StemcellManager.new
         blobstore = App.instance.blobstores.blobstore
         compiled_package_deleter = Jobs::Helpers::CompiledPackageDeleter.new(blobstore, logger)
         stemcell_deleter = Jobs::Helpers::StemcellDeleter.new(logger)
-        releases_to_delete_picker = Jobs::Helpers::ReleasesToDeletePicker.new(release_manager)
-        stemcells_to_delete_picker = Jobs::Helpers::StemcellsToDeletePicker.new(stemcell_manager)
         package_deleter = Helpers::PackageDeleter.new(compiled_package_deleter, blobstore, logger)
         template_deleter = Helpers::TemplateDeleter.new(blobstore, logger)
         release_deleter = Helpers::ReleaseDeleter.new(package_deleter, template_deleter, Config.event_log, logger)
         release_version_deleter =
           Helpers::ReleaseVersionDeleter.new(release_deleter, package_deleter, template_deleter, logger, Config.event_log)
+        release_manager = Api::ReleaseManager.new
         name_version_release_deleter =
           Helpers::NameVersionReleaseDeleter.new(release_deleter, release_manager, release_version_deleter, logger)
 
-        if @config['remove_all']
-          releases_to_keep = 0
-          stemcells_to_keep = 0
-          dns_blob_age = 0
-          dns_blobs_to_keep = 0
+        orphaned_vm_deleter = OrphanedVMDeleter.new(logger)
+        orphan_disk_manager = OrphanDiskManager.new(Config.logger)
 
-          dns_blobs_to_keep = 1 if Models::Deployment.count.positive?
-        else
-          releases_to_keep = 2
-          stemcells_to_keep = 2
-          dns_blob_age = 3600
-          dns_blobs_to_keep = 10
-        end
+        cleanable_artifacts = CleanableArtifacts.new(@config['remove_all'], logger, release_manager: release_manager)
 
-        num_orphaned_vms_deleted = delete_orphaned_vms(orphaned_vm_deleter)
+        num_orphaned_vms_deleted = delete_orphaned_vms(orphaned_vm_deleter, cleanable_artifacts.orphaned_vms)
 
         num_releases_deleted = delete_releases(
-          releases_to_delete_picker,
           name_version_release_deleter,
-          releases_to_keep,
+          cleanable_artifacts.releases,
         )
 
         num_stemcells_deleted = delete_stemcells(
-          stemcells_to_delete_picker,
           stemcell_manager,
           stemcell_deleter,
-          stemcells_to_keep,
+          cleanable_artifacts.stemcells,
         )
 
-        num_compiled_packages_deleted = delete_compiled_packages(compiled_package_deleter)
-        num_orphaned_disks_deleted = delete_orphaned_disks(orphan_disk_manager)
-        num_exported_releases_deleted = delete_exported_releases(blobstore)
-        dns_blob_message = delete_expired_dns_blobs(dns_blob_age, dns_blobs_to_keep)
+        num_compiled_packages_deleted = delete_compiled_packages(compiled_package_deleter, cleanable_artifacts.compiled_packages)
+        num_orphaned_disks_deleted = delete_orphaned_disks(orphan_disk_manager, cleanable_artifacts.orphan_disks)
+        num_exported_releases_deleted = delete_exported_releases(blobstore, cleanable_artifacts.exported_releases)
+        dns_blob_message = delete_expired_dns_blobs(dns_blob_cleanup, cleanable_artifacts.expired_blobs)
 
         "Deleted #{num_releases_deleted} release(s), " \
           "#{num_stemcells_deleted} stemcell(s), " \
           "#{num_compiled_packages_deleted} extra compiled package(s), " \
           "#{num_orphaned_disks_deleted} orphaned disk(s), " \
           "#{num_orphaned_vms_deleted} orphaned vm(s), " \
-          "#{num_exported_releases_deleted} exported release(s)\n#{dns_blob_message}"
+          "#{num_exported_releases_deleted} exported release(s), " \
+          "#{dns_blob_message}"
       end
 
       private
 
-      def delete_orphaned_vms(orphaned_vm_deleter)
-        orphaned_vms = Models::OrphanedVm.all
+      def delete_orphaned_vms(orphaned_vm_deleter, orphaned_vms)
         orphaned_vm_stage = Config.event_log.begin_stage('Deleting orphaned vms', orphaned_vms.count)
         ThreadPool.new(max_threads: Config.max_threads).wrap do |pool|
           orphaned_vms.each do |orphaned_vm|
@@ -95,8 +79,7 @@ module Bosh::Director
         orphaned_vms.count
       end
 
-      def delete_releases(releases_to_delete_picker, name_version_release_deleter, releases_to_keep)
-        unused_release_name_and_versions = releases_to_delete_picker.pick(releases_to_keep)
+      def delete_releases(name_version_release_deleter, unused_release_name_and_versions)
         release_count = unused_release_name_and_versions.map { |r| r['versions'] }.flatten.count
         release_stage = Config.event_log.begin_stage('Deleting releases', release_count)
         ThreadPool.new(max_threads: Config.max_threads).wrap do |pool|
@@ -117,8 +100,7 @@ module Bosh::Director
         release_count
       end
 
-      def delete_stemcells(stemcells_to_delete_picker, stemcell_manager, stemcell_deleter, stemcells_to_keep)
-        stemcells_to_delete = stemcells_to_delete_picker.pick(stemcells_to_keep)
+      def delete_stemcells(stemcell_manager, stemcell_deleter, stemcells_to_delete)
         stemcell_stage = Config.event_log.begin_stage('Deleting stemcells', stemcells_to_delete.count)
         ThreadPool.new(max_threads: Config.max_threads).wrap do |pool|
           stemcells_to_delete.each do |stemcell|
@@ -135,13 +117,14 @@ module Bosh::Director
         stemcells_to_delete.count
       end
 
-      def delete_compiled_packages(compiled_package_deleter)
-        return 0 unless @config['remove_all']
-
-        compiled_packages_to_delete = Jobs::Helpers::CompiledPackagesToDeletePicker.pick
-        compiled_package_stage = Config.event_log.begin_stage('Deleting compiled packages', compiled_packages_to_delete.count)
+      def delete_compiled_packages(compiled_package_deleter, compiled_packages_to_delete)
+        remaining_compiled_packages_to_delete = compiled_packages_to_delete.reject do |cp|
+          cp.package.nil? # deleting release version may have already deleted package by cascade
+        end
+        compiled_package_stage = Config.event_log.begin_stage('Deleting compiled packages',
+          remaining_compiled_packages_to_delete.count)
         ThreadPool.new(max_threads: Config.max_threads).wrap do |pool|
-          compiled_packages_to_delete.each do |compiled_package|
+          remaining_compiled_packages_to_delete.each do |compiled_package|
             pool.process do
               cp_desc = "#{compiled_package.name} for #{compiled_package.stemcell_os}/#{compiled_package.stemcell_version}"
               compiled_package_stage.advance_and_track(cp_desc) do
@@ -151,13 +134,10 @@ module Bosh::Director
           end
         end
 
-        compiled_packages_to_delete.count
+        remaining_compiled_packages_to_delete.count
       end
 
-      def delete_orphaned_disks(orphan_disk_manager)
-        return 0 unless @config['remove_all']
-
-        orphan_disks = Models::OrphanDisk.all
+      def delete_orphaned_disks(orphan_disk_manager, orphan_disks)
         orphan_disk_stage = Config.event_log.begin_stage('Deleting orphaned disks', orphan_disks.count)
         ThreadPool.new(max_threads: Config.max_threads).wrap do |pool|
           orphan_disks.each do |orphan_disk|
@@ -172,12 +152,11 @@ module Bosh::Director
         orphan_disks.count
       end
 
-      def delete_exported_releases(blobstore)
-        exported_releases = Models::Blob.where(type: 'exported-release')
+      def delete_exported_releases(blobstore, exported_releases)
         exported_release_count = exported_releases.count
         exported_release_stage = Config.event_log.begin_stage('Deleting exported releases', exported_releases.count)
         exported_releases.each do |exported_release|
-          exported_release_stage.advance_and_track("#{exported_release.blobstore_id}") do
+          exported_release_stage.advance_and_track(exported_release.blobstore_id) do
             blobstore.delete(exported_release.blobstore_id)
             exported_release.destroy
           end
@@ -186,13 +165,12 @@ module Bosh::Director
         exported_release_count
       end
 
-      def delete_expired_dns_blobs(dns_blob_age, dns_blobs_to_keep)
+      def delete_expired_dns_blobs(dns_blob_cleanup, expired_blobs)
         dns_blob_message = ''
 
         dns_blobs_stage = Config.event_log.begin_stage('Deleting dns blobs', 1)
         dns_blobs_stage.advance_and_track('DNS blobs') do
-          cleanup_params = { 'max_blob_age' => dns_blob_age, 'num_dns_blobs_to_keep' => dns_blobs_to_keep }
-          dns_blob_message = ScheduledDnsBlobsCleanup.new(cleanup_params).perform
+          dns_blob_message = dns_blob_cleanup.perform(expired_blobs)
         end
 
         dns_blob_message
