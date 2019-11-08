@@ -21,6 +21,13 @@ module Bosh::Director
           expect_redirect_to_queued_task(last_response)
         end
       end
+
+      context 'when asking to see artfacts that will be cleaned' do
+        it 'returns json' do
+          get('/dryrun')
+          expect(last_response.status).to eq(200)
+        end
+      end
     end
   end
 end

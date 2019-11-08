@@ -12,7 +12,7 @@ module Bosh::Director
       end
 
       get '/dryrun' do
-        Bosh::Director::CleanableArtifacts.new(params[:remove_all], @config.logger)
+        Bosh::Director::CleanupArtifactManager.new(params[:remove_all], @config.logger)
       end
     end
   end
