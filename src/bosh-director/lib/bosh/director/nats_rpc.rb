@@ -2,7 +2,7 @@ module Bosh::Director
   # Remote procedure call client wrapping NATS
   class NatsRpc
     def initialize(nats_uri, nats_server_ca_path, nats_client_private_key_path, nats_client_certificate_path)
-      @nats = NatsClient.new(true)
+      @nats = NatsClient.new
       @nats_uri = nats_uri
       @nats_server_ca_path = nats_server_ca_path
       @nats_client_private_key_path = nats_client_private_key_path
