@@ -19,13 +19,14 @@ module Bosh::Director
           if dns_spec
             servers = []
             dns_spec.each do |dns|
-              dns = NetAddr::CIDR.create(dns)
-              unless dns.size == 1
+              begin
+                dns = NetAddr.parse_ip(dns)
+              rescue NetAddr::ValidationError => e
                 raise NetworkInvalidDns,
                       "Invalid DNS for network '#{network}': must be a single IP"
               end
 
-              servers << dns.ip
+              servers << dns.to_s
             end
           end
 
